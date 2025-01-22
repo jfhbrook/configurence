@@ -84,6 +84,11 @@ test:
   uv run pytest ./tests
   @just _clean-test
 
+# Update snapshots
+snap:
+  uv run pytest --snapshot-update ./tests
+  @just _clean-test
+
 _clean-test:
   rm -f pytest_runner-*.egg
   rm -rf tests/__pycache__

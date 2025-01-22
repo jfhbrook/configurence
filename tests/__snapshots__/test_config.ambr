@@ -1,0 +1,8 @@
+# serializer version: 1
+# name: test_repr
+  '''
+  name: my-app
+  some_bool: true
+  
+  '''
+# ---

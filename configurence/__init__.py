@@ -301,28 +301,25 @@ class BaseConfig:
         return yaml.dump(self.as_dict(), Dumper=Dumper)
 
 
-def config(name: str) -> Callable[[Type[Any]], Type[Any]]:
+def config(cls: Type[Any]) -> Type[Any]:
     """
     A configuration object. This class is typically used by a CLI, but may
     also be useful for scripts or Jupyter notebooks using its configuration.
     """
+    base_cls: Any = dataclass(BaseConfig)
+    cfg_cls = dataclass(cls)
 
-    def decorator(cls: Type[Any]) -> Type[Any]:
-        base_cls: Any = dataclass(BaseConfig)
-        cfg_cls = dataclass(cls)
+    @dataclass
+    class new_cls(cfg_cls, base_cls):
+        def __repr__(self) -> str:
+            return BaseConfig.__repr__(self)
 
-        @dataclass
-        class new_cls(cfg_cls, base_cls):
-            pass
+    new_cls.__name__ = cls.__name__
 
-        new_cls.__name__ = cls.__name__
+    for f in fields(base_cls):
+        setattr(new_cls, f.name, f)
 
-        for f in fields(base_cls):
-            setattr(new_cls, f.name, f)
+    for f in fields(cfg_cls):
+        setattr(new_cls, f.name, f)
 
-        for f in fields(cfg_cls):
-            setattr(new_cls, f.name, f)
-
-        return new_cls
-
-    return decorator
+    return new_cls

@@ -33,6 +33,7 @@ dev = [
   "mkdocs",
   "mkdocs-include-markdown-plugin",
   "mkdocstrings[python]",
+  "syrupy",
   "tox",
   "validate-pyproject[all]",
 ]
