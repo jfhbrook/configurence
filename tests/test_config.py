@@ -4,6 +4,8 @@ from typing import Any
 
 import pytest
 
+from tests.conftest import Other
+
 
 @pytest.mark.parametrize(
     "name",
@@ -40,6 +42,7 @@ def test_get_unknown(config) -> None:
         ("opt_bool", "false", False),
         ("opt_int", "1", 1),
         ("opt_float", "1.0", 1.0),
+        ("some_other", "foo", Other("foo")),
     ],
 )
 def test_set(config, name: str, value: str, expected: Any) -> None:

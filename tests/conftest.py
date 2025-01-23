@@ -1,10 +1,28 @@
 # -*- coding: utf-8 -*-
 
-from typing import Optional
+from typing import Any, Optional
+
+try:
+    from typing import Self
+except ImportError:
+    Self = Any
 
 import pytest
 
 from configurence import config as config_
+from configurence import field
+
+
+class Other:
+    def __init__(self: Self, name: str) -> None:
+        self.name = name
+
+    def __eq__(self: Self, other: Any) -> bool:
+        return isinstance(other, Other) and self.name == other.name
+
+
+def convert_other(value: str) -> Other:
+    return Other(value)
 
 
 @pytest.fixture
@@ -19,6 +37,10 @@ def config_cls():
         opt_int: Optional[int]
         some_float: float
         opt_float: Optional[float]
+
+        some_other: Other = field(
+            default_factory=lambda: Other("default"), convert=convert_other
+        )
 
     return Config
 

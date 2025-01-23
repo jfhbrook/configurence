@@ -4,7 +4,7 @@
 A simple CLI configuration management library
 """
 
-from dataclasses import asdict, dataclass, Field
+from dataclasses import asdict, dataclass
 from dataclasses import field as _field
 from dataclasses import fields, MISSING, replace
 import logging
@@ -83,9 +83,9 @@ def field(
     compare: bool = True,
     metadata: Optional[Any] = None,
     env_var: Optional[str] = None,
-    setter: Optional[Callable[[str, str], Any]] = None,
+    convert: Optional[Callable[[str], Any]] = None,
     kw_only: Any = MISSING,
-) -> Field:
+) -> Any:
     md: Any = metadata
     if metadata:
         md = metadata
@@ -94,7 +94,7 @@ def field(
     if isinstance(md, dict):
         md.update(
             env_var=env_var if env_var else md.get("env_var", None),
-            setter=setter if setter else md.get("setter", None),
+            convert=convert if convert else md.get("convert", None),
         )
 
     # TODO: I don't know why the type checker is unhappy with this call, but
@@ -216,8 +216,12 @@ class BaseConfig:
         }
 
         for f in fields(cast(Any, self)):
-            if f.metadata and f.type not in setters and "setter" in f.metadata:
-                setters[f.type] = f.metadata["setter"]
+            if f.metadata and f.type not in setters and "convert" in f.metadata:
+
+                def setter(name: str, value: str) -> None:
+                    setattr(self, name, f.metadata["convert"](value))
+
+                setters[f.type] = setter
 
         return setters
 
