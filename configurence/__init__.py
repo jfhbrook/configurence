@@ -12,6 +12,7 @@ import logging
 import os
 import os.path
 from pathlib import Path
+import platform
 from typing import (
     Any,
     Callable,
@@ -57,7 +58,13 @@ def default_file(name: str) -> str:
     Get the default file path for the config.
     """
 
-    return os.path.join(user_config_dir(name), f"{name}.yaml")
+    config_dir: str = (
+        user_config_dir(name)
+        if platform.system() == "Windows"
+        else os.path.expanduser("~/.config")
+    )
+
+    return os.path.join(config_dir, f"{name}.yaml")
 
 
 def _read_config_file(file: str) -> Dict[str, Any]:
@@ -88,6 +95,11 @@ def field(
     convert: Optional[Callable[[str], Any]] = None,
     kw_only: Any = MISSING,
 ) -> Any:
+    """
+    A configuration field. Compatible with dataclass fields, but with extra
+    metadata for environment variables and conversions.
+    """
+
     md: Any = metadata
     if metadata:
         md = metadata
@@ -153,7 +165,6 @@ class BaseConfig(ABC):
     @classmethod
     def from_file(
         cls: Type[Self],
-        name: str,
         file: Optional[str] = None,
         global_: bool = False,
         load_environment: bool = False,
@@ -164,6 +175,7 @@ class BaseConfig(ABC):
         optionally create the file.
         """
 
+        name = cast(Any, cls)._name
         env_prefix = name.upper()
         env_config = f"{env_prefix}_CONFIG"
 
@@ -177,7 +189,7 @@ class BaseConfig(ABC):
             _file = default_file(name)
 
         found_file = False
-        kwargs: Dict[str, Any] = dict(name=name, file=_file)
+        kwargs: Dict[str, Any] = dict(file=_file)
         try:
             found_file = True
             kwargs.update(_read_config_file(_file))

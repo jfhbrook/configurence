@@ -31,14 +31,14 @@ def convert_other(value: str) -> Other:
 def config_cls(app_name):
     @config_(app_name)
     class Config(BaseConfig):
-        some_str: str
-        opt_str: Optional[str]
-        some_bool: bool
-        opt_bool: Optional[bool]
-        some_int: int
-        opt_int: Optional[int]
-        some_float: float
-        opt_float: Optional[float]
+        some_str: str = ""
+        opt_str: Optional[str] = None
+        some_bool: bool = False
+        opt_bool: Optional[bool] = None
+        some_int: int = 0
+        opt_int: Optional[int] = None
+        some_float: float = 0.0
+        opt_float: Optional[float] = None
 
         some_other: Other = field(
             default_factory=lambda: Other("default"), convert=convert_other
@@ -70,3 +70,8 @@ def config(config_cls, local_filename):
         some_float=1.0,
         opt_float=None,
     )
+
+
+@pytest.fixture
+def local_config(config_cls):
+    return config_cls.from_file()
