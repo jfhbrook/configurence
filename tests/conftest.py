@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os.path
 from typing import Any, Optional
 
 try:
@@ -53,7 +54,7 @@ def app_name() -> str:
 
 @pytest.fixture
 def local_filename(app_name) -> str:
-    return f"/Users/josh/.config/{app_name}.yaml"
+    return os.path.expanduser(f"~/.config/{app_name}.yaml")
 
 
 @pytest.fixture
