@@ -4,8 +4,6 @@ from typing import Any
 
 import pytest
 
-from tests.conftest import Other
-
 
 @pytest.mark.parametrize(
     "name",
@@ -29,6 +27,9 @@ def test_get_unknown(config) -> None:
         config.get("pony")
 
 
+OTHER = "__other__"
+
+
 @pytest.mark.parametrize(
     "name,value,expected",
     [
@@ -42,10 +43,12 @@ def test_get_unknown(config) -> None:
         ("opt_bool", "false", False),
         ("opt_int", "1", 1),
         ("opt_float", "1.0", 1.0),
-        ("some_other", "foo", Other("foo")),
+        ("some_other", "foo", OTHER),
     ],
 )
-def test_set(config, name: str, value: str, expected: Any) -> None:
+def test_set(config, other_cls, name: str, value: str, expected: Any) -> None:
+    if expected == OTHER:
+        expected = other_cls(value)
     config.set(name, value)
     assert config.get(name) == expected
 

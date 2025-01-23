@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os.path
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 try:
     from typing import Self
@@ -25,6 +25,11 @@ class Other:
 
 def convert_other(value: str) -> Other:
     return Other(value)
+
+
+@pytest.fixture
+def other_cls() -> Type[Other]:
+    return Other
 
 
 @pytest.fixture
