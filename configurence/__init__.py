@@ -222,12 +222,7 @@ class BaseConfig:
         return setters
 
     def _optional_field_types(self: Self) -> Set[Any]:
-        optional: Set[Any] = {
-            Optional[str],
-            Optional[bool],
-            Optional[int],
-            Optional[float],
-        }
+        optional: Set[Any] = set()
 
         for f in fields(cast(Any, self)):
             if get_origin(f.type) is Union and type(None) in get_args(f.type):
