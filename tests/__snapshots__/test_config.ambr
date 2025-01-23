@@ -2,7 +2,14 @@
 # name: test_repr
   '''
   name: my-app
+  opt_bool: null
+  opt_float: null
+  opt_int: null
+  opt_str: null
   some_bool: true
+  some_float: 1.0
+  some_int: 1
+  some_str: some_str
   
   '''
 # ---
