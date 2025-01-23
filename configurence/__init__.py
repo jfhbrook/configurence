@@ -197,7 +197,14 @@ class BaseConfig(ABC):
         kwargs: Dict[str, Any] = dict(file=_file)
         try:
             found_file = True
-            kwargs.update(_read_config_file(_file))
+            conf: Dict[str, Any] = _read_config_file(_file)
+            for f in fields(cls):
+                if f.name in {"name", "file"}:
+                    continue
+                if "load" in f.metadata:
+                    kwargs[f.name] = f.metadata["load"](conf[f.name])
+                else:
+                    kwargs[f.name] = conf[f.name]
         except FileNotFoundError:
             try:
                 kwargs.update(_read_config_file(global_file(name)))
@@ -320,7 +327,7 @@ class BaseConfig(ABC):
 
         for f in fields(cast(Any, self)):
             if "dump" in f.metadata:
-                d[f.name] = f.metadata["dump"](d[f.name])
+                d[f.name] = f.metadata["dump"](getattr(self, f.name))
 
         del d["file"]
 
