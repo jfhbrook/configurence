@@ -45,6 +45,16 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _is_optional(type_: Any) -> bool:
+    return get_origin(type_) is Union and type(None) in get_args(type_)
+
+
+def _optional_of(type_: Any) -> Any:
+    if not _is_optional(type_):
+        raise ValueError(f"{type_} is not optional")
+    return [arg for arg in get_args(type_) if arg is not type(None)][0]
+
+
 def global_file(name: str) -> str:
     """
     Get the global file path for the config.
@@ -130,15 +140,43 @@ def field(
     )
 
 
+def to_bool(value: str) -> bool:
+    if value.lower() in {"true", "yes", "y", "1"}:
+        return True
+    elif value.lower() in {"false", "no", "n", "0"}:
+        return False
+    else:
+        raise ValueError(f"Can not convert {value} to bool")
+
+
+def _env_prefix(name: str) -> str:
+    return name.upper().replace("-", "_")
+
+
 def _from_environment(cls: Any, env_prefix: str) -> Dict[str, Any]:
     env: Dict[str, Any] = dict()
     for f in fields(cls):
-        if f.metadata and "env_var" in f.metadata:
+        if f.metadata.get("env_var", None):
             env_var = f"{env_prefix}_{f.metadata['env_var']}"
             if env_var in os.environ:
-                var: str = os.environ[env_var]
-                # TODO: Buggy - test!
-                env[f.name] = cast(Any, f.type)(var)
+                type_: Any = f.type
+                var: Any = os.environ[env_var]
+                if _is_optional(type_):
+                    if var == "":
+                        var = None
+                        type_ = None
+                    else:
+                        type_ = _optional_of(type_)
+                if f.metadata.get("load", None):
+                    env[f.name] = f.metadata["load"](var)
+                elif type_ is float:
+                    env[f.name] = float(var)
+                elif type_ is int:
+                    env[f.name] = int(var)
+                elif type_ is bool:
+                    env[f.name] = to_bool(var)
+                else:
+                    env[f.name] = var
     return env
 
 
@@ -155,15 +193,15 @@ class BaseConfig(ABC):
         return self.file or default_file(self.name)
 
     @classmethod
-    def from_environment(
-        cls: Type[Self], name: str, file: Optional[str] = None
-    ) -> Self:
+    def from_environment(cls: Type[Self], file: Optional[str] = None) -> Self:
         """
         Load configuration from the environment.
         """
 
+        name = cast(Any, cls)._name
+
         logger.debug("Loading config from environment...")
-        env = _from_environment(cls, name.upper())
+        env = _from_environment(cls, _env_prefix(name))
         env["file"] = file or default_file(name)
         return cls(**env)
 
@@ -181,7 +219,7 @@ class BaseConfig(ABC):
         """
 
         name = cast(Any, cls)._name
-        env_prefix = name.upper()
+        env_prefix = _env_prefix(name)
         env_config = f"{env_prefix}_CONFIG"
 
         if file:
@@ -201,7 +239,7 @@ class BaseConfig(ABC):
             for f in fields(cls):
                 if f.name in {"name", "file"}:
                     continue
-                if "load" in f.metadata:
+                if f.metadata.get("load", None):
                     kwargs[f.name] = f.metadata["load"](conf[f.name])
                 else:
                     kwargs[f.name] = conf[f.name]
@@ -247,7 +285,7 @@ class BaseConfig(ABC):
         }
 
         for f in fields(cast(Any, self)):
-            if f.metadata and f.type not in setters and "load" in f.metadata:
+            if f.metadata and f.type not in setters and f.metadata.get("load", None):
 
                 def setter(name: str, value: str) -> None:
                     setattr(self, name, f.metadata["load"](value))
@@ -260,7 +298,7 @@ class BaseConfig(ABC):
         optional: Set[Any] = set()
 
         for f in fields(cast(Any, self)):
-            if get_origin(f.type) is Union and type(None) in get_args(f.type):
+            if _is_optional(f.type):
                 optional.add(f.type)
 
         return optional
@@ -326,7 +364,7 @@ class BaseConfig(ABC):
         d: Dict[str, Any] = asdict(inst)
 
         for f in fields(cast(Any, self)):
-            if "dump" in f.metadata:
+            if f.metadata.get("dump", None):
                 d[f.name] = f.metadata["dump"](getattr(self, f.name))
 
         del d["file"]

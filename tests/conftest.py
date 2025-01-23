@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os.path
-from typing import Any, Optional, Type
+from typing import Any, Dict, Optional, Type
 from unittest.mock import Mock
 
 try:
@@ -47,17 +47,20 @@ def other_cls() -> Type[Other]:
 def config_cls(app_name):
     @config_(app_name)
     class Config(BaseConfig):
-        some_str: str = ""
-        opt_str: Optional[str] = None
-        some_bool: bool = False
-        opt_bool: Optional[bool] = None
-        some_int: int = 0
-        opt_int: Optional[int] = None
-        some_float: float = 0.0
-        opt_float: Optional[float] = None
+        some_str: str = field(default="", env_var="SOME_STR")
+        opt_str: Optional[str] = field(default=None, env_var="OPT_STR")
+        some_bool: bool = field(default=False, env_var="SOME_BOOL")
+        opt_bool: Optional[bool] = field(default=None, env_var="OPT_BOOL")
+        some_int: int = field(default=0, env_var="SOME_INT")
+        opt_int: Optional[int] = field(default=None, env_var="OPT_INT")
+        some_float: float = field(default=0.0, env_var="SOME_FLOAT")
+        opt_float: Optional[float] = field(default=None, env_var="OPT_FLOAT")
 
         some_other: Other = field(
-            default_factory=lambda: Other("default"), load=load_other, dump=dump_other
+            default_factory=lambda: Other("default"),
+            env_var="SOME_OTHER",
+            load=load_other,
+            dump=dump_other,
         )
 
     return Config
@@ -124,6 +127,22 @@ some_float: 1.0
 some_int: 1
 some_other: default
 some_str: some_str"""
+
+
+@pytest.fixture
+def environ(monkeypatch) -> Dict[str, str]:
+    env = dict(
+        TEST_APP_OPT_FLOAT="",
+        TEST_APP_OPT_INT="",
+        TEST_APP_OPT_STR="",
+        TEST_APP_SOME_BOOL="1",
+        TEST_APP_SOME_FLOAT="2.0",
+        TEST_APP_SOME_INT="5",
+        TEST_APP_SOME_OTHER="foo",
+        TEST_APP_SOME_STR="bar",
+    )
+    monkeypatch.setattr("configurence.os.environ", env)
+    return env
 
 
 @pytest.fixture
