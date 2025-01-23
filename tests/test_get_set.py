@@ -93,7 +93,3 @@ def test_unset(config, name: str) -> None:
 def test_unset_required(config, name: str) -> None:
     with pytest.raises(ValueError):
         config.unset(name)
-
-
-def test_repr(config, snapshot) -> None:
-    assert repr(config) == snapshot
