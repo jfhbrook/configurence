@@ -1,3 +1,7 @@
+2025/01/23 Version 2.0.1
+------------------------
+- Fix `from_environment`
+
 2025/01/23 Version 2.0.0
 ------------------------
 - Must inherit from `BaseConfig`
