@@ -2,6 +2,7 @@
 
 import os.path
 from typing import Any, Optional, Type
+from unittest.mock import Mock
 
 try:
     from typing import Self
@@ -90,3 +91,31 @@ def local_config(config_cls):
 @pytest.fixture
 def global_config(config_cls):
     return config_cls.from_file(global_=True)
+
+
+@pytest.fixture
+def config_file() -> str:
+    return """opt_bool: null
+opt_float: null
+opt_int: null
+opt_str: null
+some_bool: true
+some_float: 1.0
+some_int: 1
+some_other: !!python/object:tests.conftest.Other
+name: default
+some_str: some_str"""
+
+
+@pytest.fixture
+def read_config_file(monkeypatch, config_file):
+    mock = Mock(name="_read_config_file", return_value=config_file)
+    monkeypatch.setattr("configurence._read_config_file", mock)
+    return mock
+
+
+@pytest.fixture
+def write_config_file(monkeypatch):
+    mock = Mock(name="_write_config_file")
+    monkeypatch.setattr("configurence._write_config_file", mock)
+    return mock
