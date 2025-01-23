@@ -1,7 +1,8 @@
 # serializer version: 1
 # name: test_repr
   '''
-  name: my-app
+  file: /Users/josh/.config/test-app.yaml
+  name: test-app
   opt_bool: null
   opt_float: null
   opt_int: null

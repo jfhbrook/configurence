@@ -4,6 +4,7 @@
 A simple CLI configuration management library
 """
 
+from abc import ABC
 from dataclasses import asdict, dataclass
 from dataclasses import field as _field
 from dataclasses import fields, MISSING, replace
@@ -22,6 +23,7 @@ from typing import (
     Optional,
     Set,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -123,25 +125,30 @@ def _from_environment(cls: Any, env_prefix: str) -> Dict[str, Any]:
     return env
 
 
-class BaseConfig:
-    name: str
-    _file: str
+@dataclass
+class BaseConfig(ABC):
+    file: Optional[str]
 
     @property
-    def file(self: Self) -> str:
-        """
-        The configuration file path.
-        """
-        return self._file or default_file(self.name)
+    def name(self: Self) -> str:
+        return cast(Any, self)._name
+
+    @property
+    def _file(self: Self) -> str:
+        return self.file or default_file(self.name)
 
     @classmethod
-    def from_environment(cls: Type[Self], name: str) -> Self:
+    def from_environment(
+        cls: Type[Self], name: str, file: Optional[str] = None
+    ) -> Self:
         """
         Load configuration from the environment.
         """
 
         logger.debug("Loading config from environment...")
-        return cls(**_from_environment(cls, name.upper()))
+        env = _from_environment(cls, name.upper())
+        env["file"] = file or default_file(name)
+        return cls(**env)
 
     @classmethod
     def from_file(
@@ -170,7 +177,7 @@ class BaseConfig:
             _file = default_file(name)
 
         found_file = False
-        kwargs: Dict[str, Any] = dict(name=name, _file=_file)
+        kwargs: Dict[str, Any] = dict(name=name, file=_file)
         try:
             found_file = True
             kwargs.update(_read_config_file(_file))
@@ -292,43 +299,39 @@ class BaseConfig:
 
     def as_dict(self: Self) -> Dict[str, Any]:
         inst = cast(Any, self)
-        return {k: v for k, v in asdict(inst).items() if not k.startswith("_")}
+        d = dict(name=self.name)
+        d.update({k: v for k, v in asdict(inst).items() if not k.startswith("_")})
+        return d
 
     def to_file(self: Self, file: Optional[str] = None) -> Self:
         """
         Save the configuration to a file.
         """
 
-        file = file or self.file
+        file = file or self._file
         inst = cast(Any, self)
 
         _write_config_file(file, self.as_dict())
 
-        return replace(inst, _file=file)
+        return replace(inst, file=file)
 
     def __repr__(self: Self) -> str:
         return yaml.dump(self.as_dict(), Dumper=Dumper)
 
 
-def config(cls: Type[Any]) -> Type[Any]:
-    """
-    A configuration object. This class is typically used by a CLI, but may
-    also be useful for scripts or Jupyter notebooks using its configuration.
-    """
-    base_cls: Any = dataclass(BaseConfig)
-    cfg_cls = dataclass(cls)
+C = TypeVar("C", bound=BaseConfig)
 
-    @dataclass
-    class new_cls(cfg_cls, base_cls):
-        def __repr__(self) -> str:
-            return BaseConfig.__repr__(self)
 
-    new_cls.__name__ = cls.__name__
+def config(name: str) -> Callable[[Type[C]], Type[C]]:
+    def decorator(cls: Type[C]) -> Type[C]:
+        """
+        A configuration object. This class is typically used by a CLI, but may
+        also be useful for scripts or Jupyter notebooks using its configuration.
+        """
 
-    for f in fields(base_cls):
-        setattr(new_cls, f.name, f)
+        cfg_cls = dataclass(cls)
+        cast(Any, cfg_cls)._name = name
+        cfg_cls.__repr__ = BaseConfig.__repr__
+        return cfg_cls
 
-    for f in fields(cfg_cls):
-        setattr(new_cls, f.name, f)
-
-    return new_cls
+    return decorator
