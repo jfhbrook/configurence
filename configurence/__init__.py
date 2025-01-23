@@ -11,7 +11,19 @@ import logging
 import os
 import os.path
 from pathlib import Path
-from typing import Any, Callable, cast, Dict, NoReturn, Optional, Set, Type
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Dict,
+    get_args,
+    get_origin,
+    NoReturn,
+    Optional,
+    Set,
+    Type,
+    Union,
+)
 
 try:
     from typing import Self
@@ -72,7 +84,6 @@ def field(
     metadata: Optional[Any] = None,
     env_var: Optional[str] = None,
     setter: Optional[Callable[[str, str], Any]] = None,
-    optional: Any = MISSING,
     kw_only: Any = MISSING,
 ) -> Field:
     md: Any = metadata
@@ -84,7 +95,6 @@ def field(
         md.update(
             env_var=env_var if env_var else md.get("env_var", None),
             setter=setter if setter else md.get("setter", None),
-            optional=optional if optional is not MISSING else md.get("optional", None),
         )
 
     # TODO: I don't know why the type checker is unhappy with this call, but
@@ -220,7 +230,7 @@ class BaseConfig:
         }
 
         for f in fields(cast(Any, self)):
-            if f.metadata and f.metadata.get("optional", None):
+            if get_origin(f.type) is Union and type(None) in get_args(f.type):
                 optional.add(f.type)
 
         return optional
