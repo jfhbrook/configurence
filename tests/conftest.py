@@ -10,6 +10,12 @@ except ImportError:
     Self = Any
 
 import pytest
+import yaml
+
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 from configurence import BaseConfig
 from configurence import config as config_
@@ -88,12 +94,22 @@ def config(config_cls, local_filename):
 
 
 @pytest.fixture
-def local_config(config_cls):
+def local_config(config_cls, read_config_file, write_config_file):
     return config_cls.from_file()
 
 
 @pytest.fixture
-def global_config(config_cls):
+def local_config_no_file(config_cls, read_config_file_not_found, write_config_file):
+    return config_cls.from_file()
+
+
+@pytest.fixture
+def global_config(config_cls, read_config_file, write_config_file):
+    return config_cls.from_file(global_=True)
+
+
+@pytest.fixture
+def global_config_no_file(config_cls, read_config_file_not_found, write_config_file):
     return config_cls.from_file(global_=True)
 
 
@@ -112,7 +128,15 @@ some_str: some_str"""
 
 @pytest.fixture
 def read_config_file(monkeypatch, config_file):
-    mock = Mock(name="_read_config_file", return_value=config_file)
+    config = yaml.load(config_file, Loader=Loader)
+    mock = Mock(name="_read_config_file", return_value=config)
+    monkeypatch.setattr("configurence._read_config_file", mock)
+    return mock
+
+
+@pytest.fixture
+def read_config_file_not_found(monkeypatch):
+    mock = Mock(name="_read_config_file", side_effect=FileNotFoundError(""))
     monkeypatch.setattr("configurence._read_config_file", mock)
     return mock
 

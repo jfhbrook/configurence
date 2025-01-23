@@ -7,3 +7,7 @@ def test_default_file(local_config, local_filename) -> None:
 
 def test_default_global_file(global_config, global_filename) -> None:
     assert global_config.file == global_filename
+
+
+def test_no_file(local_config_no_file, local_filename) -> None:
+    assert local_config_no_file.file == local_filename
