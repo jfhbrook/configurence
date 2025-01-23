@@ -63,6 +63,11 @@ def local_filename(app_name) -> str:
 
 
 @pytest.fixture
+def global_filename(app_name) -> str:
+    return f"/etc/{app_name}.yaml"
+
+
+@pytest.fixture
 def config(config_cls, local_filename):
     return config_cls(
         file=local_filename,
@@ -80,3 +85,8 @@ def config(config_cls, local_filename):
 @pytest.fixture
 def local_config(config_cls):
     return config_cls.from_file()
+
+
+@pytest.fixture
+def global_config(config_cls):
+    return config_cls.from_file(global_=True)

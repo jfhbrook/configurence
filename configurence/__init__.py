@@ -50,6 +50,9 @@ def global_file(name: str) -> str:
     Get the global file path for the config.
     """
 
+    if platform.system() == "Windows":
+        raise NotImplementedError("global_file")
+
     return f"/etc/{name}.yaml"
 
 
