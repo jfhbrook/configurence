@@ -10,8 +10,7 @@
   some_bool: true
   some_float: 1.0
   some_int: 1
-  some_other: !!python/object:tests.conftest.Other
-    name: default
+  some_other: default
   some_str: some_str
   
   '''

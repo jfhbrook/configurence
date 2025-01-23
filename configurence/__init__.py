@@ -95,7 +95,8 @@ def field(
     compare: bool = True,
     metadata: Optional[Any] = None,
     env_var: Optional[str] = None,
-    convert: Optional[Callable[[str], Any]] = None,
+    load: Optional[Callable[[str], Any]] = None,
+    dump: Optional[Callable[[Any], str]] = None,
     kw_only: Any = MISSING,
 ) -> Any:
     """
@@ -111,7 +112,8 @@ def field(
     if isinstance(md, dict):
         md.update(
             env_var=env_var if env_var else md.get("env_var", None),
-            convert=convert if convert else md.get("convert", None),
+            load=load if load else md.get("load", None),
+            dump=dump if dump else md.get("dump", None),
         )
 
     # TODO: I don't know why the type checker is unhappy with this call, but
@@ -238,10 +240,10 @@ class BaseConfig(ABC):
         }
 
         for f in fields(cast(Any, self)):
-            if f.metadata and f.type not in setters and "convert" in f.metadata:
+            if f.metadata and f.type not in setters and "load" in f.metadata:
 
                 def setter(name: str, value: str) -> None:
-                    setattr(self, name, f.metadata["convert"](value))
+                    setattr(self, name, f.metadata["load"](value))
 
                 setters[f.type] = setter
 
@@ -314,8 +316,14 @@ class BaseConfig(ABC):
 
     def as_dict(self: Self) -> Dict[str, Any]:
         inst = cast(Any, self)
-        d = dict(name=self.name)
-        d.update({k: v for k, v in asdict(inst).items() if not k.startswith("_")})
+        d: Dict[str, Any] = asdict(inst)
+
+        for f in fields(cast(Any, self)):
+            if "dump" in f.metadata:
+                d[f.name] = f.metadata["dump"](d[f.name])
+
+        del d["file"]
+
         return d
 
     def to_file(self: Self, file: Optional[str] = None) -> Self:
@@ -331,7 +339,9 @@ class BaseConfig(ABC):
         return replace(inst, file=file)
 
     def __repr__(self: Self) -> str:
-        return yaml.dump(self.as_dict(), Dumper=Dumper)
+        d = dict(name=self.name, file=self.file)
+        d.update(self.as_dict())
+        return yaml.dump(d, Dumper=Dumper)
 
 
 C = TypeVar("C", bound=BaseConfig)

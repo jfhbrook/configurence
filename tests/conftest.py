@@ -24,8 +24,12 @@ class Other:
         return isinstance(other, Other) and self.name == other.name
 
 
-def convert_other(value: str) -> Other:
+def load_other(value: str) -> Other:
     return Other(value)
+
+
+def dump_other(value: Other) -> str:
+    return value.name
 
 
 @pytest.fixture
@@ -47,7 +51,7 @@ def config_cls(app_name):
         opt_float: Optional[float] = None
 
         some_other: Other = field(
-            default_factory=lambda: Other("default"), convert=convert_other
+            default_factory=lambda: Other("default"), load=load_other, dump=dump_other
         )
 
     return Config
@@ -102,8 +106,7 @@ opt_str: null
 some_bool: true
 some_float: 1.0
 some_int: 1
-some_other: !!python/object:tests.conftest.Other
-name: default
+some_other: default
 some_str: some_str"""
 
 
