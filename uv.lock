@@ -163,11 +163,12 @@ wheels = [
 
 [[package]]
 name = "configurence"
-version = "2.0.0"
+version = "2.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "appdirs" },
     { name = "click" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -191,6 +192,7 @@ dev = [
 requires-dist = [
     { name = "appdirs" },
     { name = "click" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata.requires-dev]
