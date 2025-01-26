@@ -1,3 +1,7 @@
+2025/01/26 Version 2.0.2
+------------------------
+- Add `pyyaml` as a dependency
+
 2025/01/23 Version 2.0.1
 ------------------------
 - Fix `from_environment`
