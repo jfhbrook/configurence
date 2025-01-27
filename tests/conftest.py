@@ -47,6 +47,14 @@ def other_cls() -> Type[Other]:
 def config_cls(app_name):
     @config_(app_name)
     class Config(BaseConfig):
+        # At the beginning to test that load/dump are closed over properly
+        some_other: Other = field(
+            default_factory=lambda: Other("default"),
+            env_var="SOME_OTHER",
+            load=load_other,
+            dump=dump_other,
+        )
+
         some_str: str = field(default="", env_var="SOME_STR")
         opt_str: Optional[str] = field(default=None, env_var="OPT_STR")
         some_bool: bool = field(default=False, env_var="SOME_BOOL")
@@ -55,13 +63,6 @@ def config_cls(app_name):
         opt_int: Optional[int] = field(default=None, env_var="OPT_INT")
         some_float: float = field(default=0.0, env_var="SOME_FLOAT")
         opt_float: Optional[float] = field(default=None, env_var="OPT_FLOAT")
-
-        some_other: Other = field(
-            default_factory=lambda: Other("default"),
-            env_var="SOME_OTHER",
-            load=load_other,
-            dump=dump_other,
-        )
 
     return Config
 

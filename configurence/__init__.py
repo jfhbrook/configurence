@@ -284,13 +284,15 @@ class BaseConfig(ABC):
             Optional[float]: self.set_float,
         }
 
+        def setter(loader: Callable[[str], Any]) -> Callable[[str, str], None]:
+            def set_field(name: str, value: str) -> None:
+                setattr(self, name, loader(value))
+
+            return set_field
+
         for f in fields(cast(Any, self)):
             if f.metadata and f.type not in setters and f.metadata.get("load", None):
-
-                def setter(name: str, value: str) -> None:
-                    setattr(self, name, f.metadata["load"](value))
-
-                setters[f.type] = setter
+                setters[f.type] = setter(f.metadata["load"])
 
         return setters
 

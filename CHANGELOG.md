@@ -1,3 +1,7 @@
+2025/01/27 Version 2.0.3
+------------------------
+- Fix closure bug in custom load/dump
+
 2025/01/26 Version 2.0.2
 ------------------------
 - Add `pyyaml` as a dependency
